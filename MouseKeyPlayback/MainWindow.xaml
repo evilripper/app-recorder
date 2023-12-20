@@ -15,15 +15,16 @@
         <StackPanel>
             <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="70" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -35,7 +36,7 @@
                     BorderThickness="0"
                     Click="BtnRecord_Click">
                     <StackPanel>
-                        <Image Source="Images/record.png" />
+                        <Image Source="Images/record.png" Width="60" />
                         <TextBlock Margin="0" TextAlignment="Center">Record</TextBlock>
                     </StackPanel>
                 </Button>
@@ -47,7 +48,7 @@
                     BorderThickness="0"
                     Click="BtnPlayback_Click">
                     <StackPanel>
-                        <Image Source="Images/play.png" />
+                        <Image Source="Images/play.png" Width="60" />
                         <TextBlock TextAlignment="Center">Play</TextBlock>
                     </StackPanel>
                 </Button>
@@ -59,7 +60,7 @@
                     BorderThickness="0"
                     Click="BtnStop_Click">
                     <StackPanel>
-                        <Image Source="Images/stop.png" />
+                        <Image Source="Images/stop.png" Width="60" />
                         <TextBlock TextAlignment="Center">Stop</TextBlock>
                     </StackPanel>
                 </Button>
@@ -68,9 +69,10 @@
                     Grid.Column="3"
                     Margin="0,0,5,0"
                     Background="Transparent"
-                    BorderThickness="0">
+                    BorderThickness="0"
+                           Click="BtnImport_Click">
                     <StackPanel>
-                        <Image Source="Images/import.png" />
+                        <Image Source="Images/import.png" Width="60" />
                         <TextBlock TextAlignment="Center">Import</TextBlock>
                     </StackPanel>
                 </Button>
@@ -79,9 +81,10 @@
                     Grid.Column="4"
                     Margin="0,0,5,0"
                     Background="Transparent"
-                    BorderThickness="0">
+                    BorderThickness="0"
+                    Click="BtnExport_Click">
                     <StackPanel>
-                        <Image Source="Images/export.png" />
+                        <Image Source="Images/export.png" Width="60" />
                         <TextBlock TextAlignment="Center">Export</TextBlock>
                     </StackPanel>
                 </Button>
@@ -92,7 +95,7 @@
                     BorderThickness="0"
                     Click="BtnCreateClick_Click">
                     <StackPanel>
-                        <Image Height="81" Source="Images/mouse_icon.png" />
+                        <Image Height="81" Source="Images/mouse_icon.png" Width="60" />
                         <TextBlock TextAlignment="Center">Click</TextBlock>
                     </StackPanel>
                 </Button>
@@ -103,7 +106,7 @@
                     BorderThickness="0"
                     Click="BtnInsertKey_Click">
                     <StackPanel>
-                        <Image Height="81" Source="Images/keyboard.png" />
+                        <Image Height="81" Source="Images/keyboard.png" Width="60" />
                         <TextBlock Text="Key" TextAlignment="Center" />
                     </StackPanel>
                 </Button>
@@ -114,7 +117,7 @@
                     BorderThickness="0"
                     Click="BtnCreateText_Click">
                     <StackPanel>
-                        <Image Height="81" Source="Images/cursor-field.png" />
+                        <Image Height="81" Source="Images/cursor-field.png" Width="60" />
                         <TextBlock Text="Text" TextAlignment="Center" />
                     </StackPanel>
                 </Button>
@@ -125,12 +128,23 @@
                     BorderThickness="0"
                     Click="BtnWait_Click">
                     <StackPanel>
-                        <Image Height="81" Source="Images/time.jpg" />
+                        <Image Height="81" Source="Images/time.jpg" Width="60" />
                         <TextBlock Text="Wait" TextAlignment="Center" />
                     </StackPanel>
                 </Button>
+                <Button
+                     x:Name="btnDelete"
+                     Grid.Column="9"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Click="BtnDelete_Click">
+                    <StackPanel>
+                        <Image Height="81" Source="Images/delete.png" Width="60" />
+                        <TextBlock Text="Delete" TextAlignment="Center" />
+                    </StackPanel>
+                </Button>
 
-                <Grid Grid.Column="9">
+                <Grid Grid.Column="10">
                     <StackPanel Orientation="Vertical" />
                     <Label
                         Margin="5,0,0,0"
@@ -184,7 +198,8 @@
                         MouseLeave="ListView_MouseLeave"
                         ScrollViewer.CanContentScroll="True"
                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                        SelectionChanged="ListView_SelectionChanged">
+                        SelectionChanged="ListView_SelectionChanged"
+                        >
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn

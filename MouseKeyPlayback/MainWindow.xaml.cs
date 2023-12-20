@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -141,6 +143,9 @@ namespace MouseKeyPlayback
             ProcessMouseEvent(MouseHook.MouseEvents.MouseMove, 0);
             return false;
         }
+
+
+
         #endregion
 
         #region Keyboard events
@@ -177,9 +182,9 @@ namespace MouseKeyPlayback
                 //        return;
                 //}
 
-                listView.Items.Clear();
-                recordList = new List<Record>();
-                count = 0;
+                //listView.Items.Clear();
+                //recordList = new List<Record>();
+                //count = 0;
             }
 
             keyboardHook.Install();
@@ -368,8 +373,13 @@ namespace MouseKeyPlayback
             countRecord.Content = String.Format("{0} records", count.ToString());
         }
 
+
+        Stopwatch stopwatchLastAddEvent = new Stopwatch();  
+
         private void AddToListView(Record item)
         {
+
+            bool removedRecord = false;
             // Check if two last records are similar
             if (listView.Items.Count > 0)
             {
@@ -382,7 +392,10 @@ namespace MouseKeyPlayback
                             var lastAction = lastItem.EventMouse.Action;
                             if (lastAction == MouseHook.MouseEvents.MouseMove
                                 && item.EventMouse.Action == lastAction)
-                                this.listView.Items.RemoveAt(this.listView.Items.Count - 1);
+                                {
+                                    //this.listView.Items.RemoveAt(this.listView.Items.Count - 1);
+                                    removedRecord = true;
+                                }  
                             break;
                         case Constants.KEYBOARD:
                             break;
@@ -391,7 +404,28 @@ namespace MouseKeyPlayback
             }
 
             // satisfy every condition
+        
+
+            if (stopwatchLastAddEvent.IsRunning && !removedRecord)
+            {
+
+                long milliseconds = stopwatchLastAddEvent.ElapsedMilliseconds;
+                stopwatchLastAddEvent.Reset();
+                stopwatchLastAddEvent.Stop();
+                Record waitEvent = new Record
+                {
+                    WaitMs = Convert.ToInt32(stopwatchLastAddEvent.ElapsedMilliseconds),
+                    Type = Constants.WAIT
+                };
+                if (waitEvent.WaitMs > 500)
+                {
+                    LogWaitEvent(waitEvent);
+                  
+                }
+            }
             this.listView.Items.Add(item);
+            stopwatchLastAddEvent.Start();
+
         }
         #endregion
 
@@ -402,9 +436,10 @@ namespace MouseKeyPlayback
                 return;
 
             int num;
+            LaunchApp();
             if (int.TryParse(repeatTime.Text, out num)) {
                 for (int i = 0; i < num; ++i) {
-                    LaunchApp();
+          
 
                     foreach (var record in recordList) {
                         switch (record.Type) {
@@ -420,7 +455,7 @@ namespace MouseKeyPlayback
                             default:
                                 break;
                         }
-                        Thread.Sleep(4);
+                        Thread.Sleep(2);
                     }
 
                     Thread.Sleep(10);
@@ -508,65 +543,80 @@ namespace MouseKeyPlayback
 		System.Drawing.Graphics g;
 		private void ListView_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
 		{
-			var item = listView.SelectedItem as Record;
-			if (!listView.HasItems || item.EventMouse == null)
-				return;
-			try
-			{
-				if(g != null)
-				{
-					RedrawWindow(IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
-					g.Dispose();
-					//ReleaseDC(desktop);
-				}				
-			}
-			catch(Exception ex)
-			{
-				Console.WriteLine(ex);
-			}
-			
-			int id = item.Id;
-			System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 3);
+            try
+            {
 
-			if (item.EventMouse.Action == MouseHook.MouseEvents.MouseMove)
-			{
-				Record last = recordList.FindLast(r => 
-				{
-					if (r.EventMouse == null)
-						return false;
-					return r.Id < id && r.EventMouse.Action != MouseHook.MouseEvents.MouseMove;
-				});
-				if (last == null)
-				{
-					last = recordList[0];
-				}
-				List<Record> list = recordList.FindAll(r => r.Id <= id && r.Id > last.Id);
+                if (listView.SelectedItem == null)
+                {
+                    return;
+                }
+                var item = listView.SelectedItem as Record;
+                if (!listView.HasItems || item.EventMouse == null)
+                    return;
+                try
+                {
+                    if (g != null)
+                    {
+                        RedrawWindow(IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+                        g.Dispose();
+                        //ReleaseDC(desktop);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
 
-				desktop = GetDC(IntPtr.Zero);
-				g = System.Drawing.Graphics.FromHdc(desktop);				
-				System.Drawing.Point[] points = list.ConvertAll(new Converter<Record, System.Drawing.Point>(RecordToPoint)).ToArray();
-				System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
-				path.AddLines(points);
-				g.DrawPath(pen, path);
-				//g.Clear(System.Drawing.Color.Transparent);
-			} else if(item.Type == Constants.MOUSE)
-			{
-				int lengthLine = 40;
-				desktop = GetDC(IntPtr.Zero);
-				g = System.Drawing.Graphics.FromHdc(desktop);
-				System.Drawing.Point point1 = new System.Drawing.Point(
-					(int)item.EventMouse.Location.X, (int)item.EventMouse.Location.Y - lengthLine);
-				System.Drawing.Point point2 = new System.Drawing.Point(
-					(int)item.EventMouse.Location.X, (int)item.EventMouse.Location.Y + lengthLine);
-				g.DrawLine(pen, point1, point2);
+                int id = item.Id;
+                System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Red, 3);
 
-				System.Drawing.Point point3 = new System.Drawing.Point(
-					(int)item.EventMouse.Location.X - lengthLine, (int)item.EventMouse.Location.Y);
-				System.Drawing.Point point4 = new System.Drawing.Point(
-					(int)item.EventMouse.Location.X + lengthLine, (int)item.EventMouse.Location.Y);
-				
-				g.DrawLine(pen, point3, point4);
-			}
+                if (item.EventMouse.Action == MouseHook.MouseEvents.MouseMove)
+                {
+                    Record last = recordList.FindLast(r =>
+                    {
+                        if (r.EventMouse == null)
+                            return false;
+                        return r.Id < id && r.EventMouse.Action != MouseHook.MouseEvents.MouseMove;
+                    });
+                    if (last == null)
+                    {
+                        last = recordList[0];
+                    }
+                    List<Record> list = recordList.FindAll(r => r.Id <= id && r.Id > last.Id);
+
+                    desktop = GetDC(IntPtr.Zero);
+                    g = System.Drawing.Graphics.FromHdc(desktop);
+                    System.Drawing.Point[] points = list.ConvertAll(new Converter<Record, System.Drawing.Point>(RecordToPoint)).ToArray();
+                    System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+                    path.AddLines(points);
+                    g.DrawPath(pen, path);
+                    //g.Clear(System.Drawing.Color.Transparent);
+                }
+                else if (item.Type == Constants.MOUSE)
+                {
+                    int lengthLine = 40;
+                    desktop = GetDC(IntPtr.Zero);
+                    g = System.Drawing.Graphics.FromHdc(desktop);
+                    System.Drawing.Point point1 = new System.Drawing.Point(
+                        (int)item.EventMouse.Location.X, (int)item.EventMouse.Location.Y - lengthLine);
+                    System.Drawing.Point point2 = new System.Drawing.Point(
+                        (int)item.EventMouse.Location.X, (int)item.EventMouse.Location.Y + lengthLine);
+                    g.DrawLine(pen, point1, point2);
+
+                    System.Drawing.Point point3 = new System.Drawing.Point(
+                        (int)item.EventMouse.Location.X - lengthLine, (int)item.EventMouse.Location.Y);
+                    System.Drawing.Point point4 = new System.Drawing.Point(
+                        (int)item.EventMouse.Location.X + lengthLine, (int)item.EventMouse.Location.Y);
+
+                    g.DrawLine(pen, point3, point4);
+                }
+
+
+            }
+            catch(Exception ex)
+            {
+
+            }
 		}
 
 		private struct LASTINPUTINFO
@@ -600,7 +650,7 @@ namespace MouseKeyPlayback
 
 		private System.Drawing.Point RecordToPoint(Record r)
 		{
-			return new System.Drawing.Point((int)r.EventMouse.Location.X, (int)r.EventMouse.Location.Y);
+		   return new System.Drawing.Point((int)r.EventMouse.Location.X, (int)r.EventMouse.Location.Y);
 		}
 
 		private void ListView_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -642,5 +692,73 @@ namespace MouseKeyPlayback
 				LogWaitEvent(record);
 			}
 		}
-	}
+
+        private void BtnExport_Click(object sender, RoutedEventArgs e)
+        {
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(recordList);
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            // Set filter for file extension and default file extension 
+            //dlg.DefaultExt = ".png";
+            //dlg.Filter = "JPEG Files (*.jpeg)|*.jpeg|PNG Files (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif";
+            dlg.DefaultExt = ".macro";
+            dlg.Filter = "Macro File (*.macro)|*.macro";
+            // Display OpenFileDialog by calling ShowDialog method 
+            Nullable<bool> result = dlg.ShowDialog();
+            // Get the selected file name and display in a TextBox 
+            if (result.HasValue && result.Value)
+            {
+                // Open document 
+                string filename = dlg.FileName;
+                File.WriteAllText(filename, json);
+            }
+        }
+
+        private void BtnImport_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            // Set filter for file extension and default file extension 
+            //dlg.DefaultExt = ".png";
+            //dlg.Filter = "JPEG Files (*.jpeg)|*.jpeg|PNG Files (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif";
+            dlg.DefaultExt = ".macro";
+            dlg.Filter = "Macro File (*.macro)|*.macro";
+            Nullable<bool> result = dlg.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                // Open document 
+                string filename = dlg.FileName;
+                string json = File.ReadAllText(filename);
+                recordList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Record>>(json);
+                foreach (var item in recordList)
+                {
+                    listView.Items.Add(item);   
+                }
+     
+            }
+        }
+
+        private void BtnDelete_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItems = listView.SelectedItems;
+            //ListBox.SelectedObjectCollection selectedItems = new ListBox.SelectedObjectCollection(lstClientes);
+            //selectedItems = lstClientes.SelectedItems;
+
+            if (listView.SelectedIndex != -1)
+            {
+                for (int i = selectedItems.Count - 1; i >= 0; i--)
+                    listView.Items.Remove(selectedItems[i]);
+            }
+
+
+            //listView.Items.Clear();
+            recordList = new List<Record>();
+            foreach (Record record in listView.Items)
+            {
+                recordList.Add(record);
+            }
+
+            //var viewModel = DataContext as YourViewModel;
+            //viewModel.YourCommand.Execute(null);
+        }
+
+    }
 }
