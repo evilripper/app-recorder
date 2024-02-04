@@ -163,8 +163,11 @@ namespace MouseKeyPlayback
         #region Record/Stop
         private void BtnRecord_Click(object sender, RoutedEventArgs e)
         {
+
             if (isHooked)
                 return;
+            stopwatchLogMouseEvents.Start();
+            stopwatchLastAddEvent.Start();
             if (listView.Items.Count > 0)
             {
                 //MessageBoxResult result = System.Windows.MessageBox.Show("Do you want to record again?",
@@ -199,6 +202,8 @@ namespace MouseKeyPlayback
             keyboardHook.Uninstall();
             mouseHook.Uninstall();
             isHooked = false;
+            stopwatchLastAddEvent.Reset();
+            stopwatchLogMouseEvents.Reset();
         }
         #endregion
 
@@ -325,7 +330,9 @@ namespace MouseKeyPlayback
             var position = Control.MousePosition;
             return new CursorPoint(position.X, position.Y);
         }
-	
+
+
+        Stopwatch stopwatchLogMouseEvents = new Stopwatch();
         private void LogMouseEvents(MouseEvent mEvent)
         {
             count++;
@@ -338,6 +345,29 @@ namespace MouseKeyPlayback
             };
 
             AddRecordItem(item);
+
+            //if (stopwatchLogMouseEvents.IsRunning)
+            //{
+
+            //    long milliseconds = stopwatchLogMouseEvents.ElapsedMilliseconds;
+            //    if (milliseconds > 50)
+            //    {
+            //        stopwatchLogMouseEvents.Stop();
+            //        Record waitEvent = new Record
+            //        {
+            //            WaitMs = Convert.ToInt32(stopwatchLogMouseEvents.ElapsedMilliseconds),
+            //            Type = Constants.WAIT
+            //        };
+
+            //        AddRecordItem(item);
+            //        LogWaitEvent(waitEvent);
+            //        stopwatchLogMouseEvents.Restart();
+
+            //    }
+            //}
+          
+
+
         }
 
         private void LogKeyboardEvents(KeyboardEvent kEvent)
@@ -351,6 +381,9 @@ namespace MouseKeyPlayback
                 Content = String.Format("{0} was {1}", kEvent.Key.ToString(),
                     (kEvent.Action == Constants.KEY_DOWN) ? "pressed" : "released")
             };
+
+
+
 
             AddRecordItem(item);
         }
@@ -403,28 +436,26 @@ namespace MouseKeyPlayback
                 }
             }
 
-            // satisfy every condition
-        
-
+            // intercetto le pause PORCODIO 
             if (stopwatchLastAddEvent.IsRunning && !removedRecord)
             {
-
-                long milliseconds = stopwatchLastAddEvent.ElapsedMilliseconds;
-                stopwatchLastAddEvent.Reset();
-                stopwatchLastAddEvent.Stop();
-                Record waitEvent = new Record
+                long milliseconds = stopwatchLastAddEvent.ElapsedMilliseconds;            
+                if (milliseconds > 1000)
                 {
-                    WaitMs = Convert.ToInt32(stopwatchLastAddEvent.ElapsedMilliseconds),
-                    Type = Constants.WAIT
-                };
-                if (waitEvent.WaitMs > 500)
-                {
+                    stopwatchLastAddEvent.Stop();
+                    Record waitEvent = new Record
+                    {
+                        WaitMs = Convert.ToInt32(stopwatchLastAddEvent.ElapsedMilliseconds),
+                        Type = Constants.WAIT
+                    };
                     LogWaitEvent(waitEvent);
-                  
+                    stopwatchLastAddEvent.Restart();
                 }
             }
+
+
             this.listView.Items.Add(item);
-            stopwatchLastAddEvent.Start();
+            //stopwatchLastAddEvent.Start();
 
         }
         #endregion
